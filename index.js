@@ -82,7 +82,7 @@ app.post("/summarize-url", async (req, res) => {
       parameters: { src_lang: "eng_Latn", tgt_lang: tgtLang },
     });
 
-    res.json({ translatedSummary: translationResponse.translation_text });
+    res.json({ summary: translationResponse.translation_text });
   } catch (error) {
     console.error("Summarization Error:", error);
     res
