@@ -40,6 +40,47 @@ const extractTextFromHTML = (html) => {
     const text = cleanedHTML.replace(/<[^>]+>/g, "").trim();
     return text;
 };
+// Text Summarization and Translation Endpoint
+app.post("/summarize-text", async (req, res) => {
+  try {
+      const { text, tgtLang } = req.body;
+
+      if (!text || !tgtLang) {
+          return res.status(400).json({ error: "Missing required fields: text or tgtLang" });
+      }
+
+      if (text.trim().length === 0) {
+          throw new Error("No valid text content provided");
+      }
+
+      const summaryResponse = await inference.summarization({
+          model: "google/pegasus-xsum",
+          inputs: text,
+          parameters: {
+              max_length: 70,
+              min_length: 50,
+          },
+      });
+
+      if (!summaryResponse || !summaryResponse.summary_text) {
+          throw new Error("Summarization failed: No summary text returned");
+      }
+
+      const summary = summaryResponse.summary_text;
+
+      const translationResponse = await inference.translation({
+          model: "facebook/nllb-200-distilled-600M",
+          inputs: summary,
+          parameters: { src_lang: "eng_Latn", tgt_lang: tgtLang },
+      });
+
+      res.json({ translatedSummary: translationResponse.translation_text });
+  } catch (error) {
+      console.error("Summarization Error:", error);
+      res.status(500).json({ error: error.message || "Summarization and translation failed" });
+  }
+});
+
 
 // Summarization Endpoint
 app.post("/summarize", async (req, res) => {
