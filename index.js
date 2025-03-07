@@ -43,23 +43,27 @@ const extractTextFromHTML = (html) => {
   return text;
 };
 // Text Summarization and Translation Endpoint
-app.post("/summarize-text", async (req, res) => {
+// URL Summarization and Translation Endpoint
+app.post("/summarize-url", async (req, res) => {
   try {
-    const { text, tgtLang } = req.body;
+    const { url, tgtLang } = req.body;
 
-    if (!text || !tgtLang) {
+    if (!url || !tgtLang) {
       return res
         .status(400)
-        .json({ error: "Missing required fields: text or tgtLang" });
+        .json({ error: "Missing required fields: url or tgtLang" });
     }
 
-    if (text.trim().length === 0) {
-      throw new Error("No valid text content provided");
+    const htmlContent = await fetchWebsiteContent(url);
+    const textContent = extractTextFromHTML(htmlContent);
+
+    if (!textContent || textContent.trim().length === 0) {
+      throw new Error("No text content found on the website");
     }
 
     const summaryResponse = await inference.summarization({
       model: "google/pegasus-xsum",
-      inputs: text,
+      inputs: textContent,
       parameters: {
         max_length: 70,
         min_length: 50,
